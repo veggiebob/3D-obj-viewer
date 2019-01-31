@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="icon" href="https://static.food4rhino.com/s3fs-public/users-files/dale-fugier/app/ghpolyhedra.png"><meta charset="utf-8">
+        <title>APY proctico</title>
+        <!-- notice how there's no long code detailing the positions of all of the nodes -->
+    </head>
+    <style>
+        body {
+            background-color: rgb(175, 175, 175);
+        }
+        .models {
+            text-shadow: 1px 1px gray;
+        }
+        .just_cool {
+            margin-top: 2px;
+            margin-bottom: 2px;
+            background-color: rgb(150, 150, 150);
+            border-radius: 5px;
+            color: white;
+            border: 0px;
+            font: bold;
+            transition-duration: 0.5s;
+            cursor: pointer;
+        }
+        .just_cool:hover {
+            text-shadow: 1px 1px 5px white;
+        }
+        .ui_back {
+            background-color: rgb(120, 120, 120);
+            padding: 5px;
+        }
+        .content-show {
+            background-color: rgb(255, 240, 240);
+            padding: 3px;
+        }
+        .canvas-box {
+            border: gray 5px solid;
+            transition-duration: 1s;
+        }
+        .canvas-box:hover {
+            border-color: rgb(150, 150, 150);
+            border-radius: 3px;
+        }
+        .canvas-box:focus {
+            border-color: black;
+        }
+    </style>
+    <body>
+    <canvas id="mycanvas" class="canvas-box"></canvas>
+    <div class="ui_back">
+        <input type="file" id="_" class="just_cool">
+        <button type="button" id="upload" class="just_cool">Upload </button>
+    </div>
+    <br>
+    <span id="choose-model" class="models"></span>
+    <a href="https://www.khanacademy.org/computer-programming/3-da-models/6165333002846208">Link to the program with 3D model data</a>
+    <br>
+    <a href="https://www.khanacademy.org/computer-programming/obj-standard-model/6288257072398336">PJS implementation of this 3D modeling technique</a>
+    </body>
+    <script>
+        //https://developer.mozilla.org/en-US/docs/Web/API/FileReader/FileReader
+        var f = document.getElementById("_");
+        var g = document.getElementById("upload");
+        var json = this.JSON;
+        var file;
+        var fileString;
+        g.onclick = function() {
+            //console.log(f.files);
+            if(f.files.length>0) {
+                var fr = new FileReader();
+                fr.readAsText(f.files[0]);
+                fr.onload = function(evt) {
+                    //console.log(evt.target.result);
+                    file = evt.target.result;
+                    getFileData(file);
+                    /*
+                    file = file.replace("\r", "\n");
+                    file = file.replace("\n\n", "\n");
+                    var fileArray = file.split("\n");
+                    for(var i = 0; i<fileArray.length; i++) {
+                        fileArray[i] = fileArray[i].trim();
+                    }
+                    fileString = json.stringify(fileArray);
+                    console.log(fileString);
+                    console.log(typeof fileString)
+                    */
+                };
+                //https://www.eso.org/~ndelmott/ascii.html
+            }
+        }
+    </script>
+    <script>
+    var maxVertices = 2000;
+    var maxFaces = 2000;
+    var deepCopy = function(obj) {return JSON.parse(JSON.stringify(obj));};
+    var pi = 3.14159;
+    var cos = function(x) {
+        return Math.cos(x/180*pi);
+    };
+    var sin = function(x) {
+        return Math.sin(x/180*pi);
+    }
+    var min = function(x, y) {
+        return Math.min(x, y);
+    }
+    var max = function(x, y) {
+        return Math.max(x, y);
+    }
+    var costhetax, sinthetax, costhetay, sinthetay, costhetaz, sinthetaz;
+    //obj style
+    {
+    var newObjModel = function() {
+        return [[],[],[]];
+    };
+    var addObjModel = function(moo1, moo2) {
+        var moo3 = deepCopy(moo1);
+        var moo2 = deepCopy(moo2);
+        moo3[0] = moo3[0].concat(moo2[0]);
+        for(var i = 0; i<moo2[1].length; i++) {
+            for(var j = 0; j<moo2[1][i].length; j++) {
+                moo2[1][i][j] += moo1[0].length;
+            }
+        }
+        moo3[1] = moo3[1].concat(moo2[1]);
+        moo3[2] = moo3[2].concat(moo2[2]);
+        return moo3;
+    };
+    var translateObjModel = function(moodle, x, y, z) {
+        moodle = deepCopy(moodle);
+        for(var i = 0; i<moodle[0].length; i++) {
+            moodle[0][i][0]+=x;
+            moodle[0][i][1]+=y;
+            moodle[0][i][2]+=z;
+        }
+        return moodle;
+    };
+    var scaleObjModel = function(moodle, x, y, z) {
+        if(y===undefined) {
+            y = x;
+            z = x;
+        }
+        moodle = deepCopy(moodle);
+        for(var i = 0; i<moodle[0].length; i++) {
+            moodle[0][i][0]*=x;
+            moodle[0][i][1]*=y;
+            moodle[0][i][2]*=z;
+        }
+        return moodle;
+    };
+    var sortObjModel = function(moodle) {
+        for(var i = 0; i<moodle[1].length; i++) {
+            var avgz = 0;
+            var num = 0;
+            for(var j = 0; j<moodle[1][i].length; j++) {
+                avgz+=moodle[0][moodle[1][i][j]][2];
+                num++;
+            }
+            avgz/=num;
+            moodle[3][i] = avgz;
+        }
+        var m = deepCopy(moodle);
+        //moodle[1].sort(function(a, b) {
+        //    m[3]
+    };
+    var rotateObjModel = function(moodle, xr, yr, zr) {
+        moodle = deepCopy(moodle);
+        var v = moodle[0];
+        costhetax = cos(xr);
+        sinthetax = sin(xr);
+        costhetay = cos(yr);
+        sinthetay = sin(yr);
+        costhetaz = cos(zr);
+        sinthetaz = sin(zr);
+        for(var i = 0; i<v.length; i++) {
+            var X, Y, Z;
+            //y rotation
+            X = v[i][0];
+            Z = v[i][2];
+            v[i][0] = X*costhetay - Z*sinthetay;
+            v[i][2] = Z*costhetay + X*sinthetay;
+            //x rotation
+            Y = v[i][1];
+            Z = v[i][2];
+            v[i][1] = Y*costhetax - Z*sinthetax;
+            v[i][2] = Z*costhetax + Y*sinthetax;
+            //z rotation
+            // X = v[0];
+            // Y = v[1];
+            // v[0] = X*costhetaz - Y*sinthetaz;
+            // v[1] = Y*costhetaz + X*sinthetaz;
+        }
+        //println(json.stringify(moodle[0]));
+        return moodle;
+    };
+    var prepObjModel = function(moodle) {
+        moodle = deepCopy(moodle);
+        for(var i = 0; i<moodle[1].length; i++) {
+            if(moodle[2][i]===undefined) {
+                moodle[2][i] = color(200);
+            }
+        }
+        return moodle;
+    };
+    var dot = function(a, b, c, x, y, z) {
+        return a*x+b*y+c*z;
+    };
+    var autoPosition = function(moodle) {
+        moodle = deepCopy(moodle);
+        var minX = Infinity;
+        var maxX = -Infinity;
+        var minY = Infinity;
+        var maxY = -Infinity;
+        var minZ = Infinity;
+        var maxZ = -Infinity;
+        var mx = 0;
+        var my = 0;
+        var mz = 0;
+        for(var i = 0; i<moodle[0].length; i++) {
+            minX = min(minX, moodle[0][i][0]);
+            maxX = max(maxX, moodle[0][i][0]);
+            
+            minY = min(minY, moodle[0][i][1]);
+            maxY = max(maxY, moodle[0][i][1]);
+            
+            minZ = min(minZ, moodle[0][i][2]);
+            maxZ = max(maxZ, moodle[0][i][2]);
+            
+            mx+=moodle[0][i][0];
+            my+=moodle[0][i][1];
+            mz+=moodle[0][i][2];
+        }
+        mx/=moodle[0].length;
+        my/=moodle[0].length;
+        mz/=moodle[0].length;
+        var sc = 1/(Math.max(Math.max(maxX-minX, maxY-minY), maxZ-minZ));
+        for(var i = 0; i<moodle[0].length; i++) {
+            moodle[0][i][0]-=mx;
+            moodle[0][i][1]-=my;
+            moodle[0][i][2]-=mz;
+            moodle[0][i][0]*=sc;
+            moodle[0][i][1]*=sc;
+            moodle[0][i][2]*=sc;
+        }
+        return moodle;
+    };
+    }
+    //file conversion
+    {
+    var evalStr = function(s){
+        var evalExp = function(n1, n2, op){
+            var result = 0;
+            switch(op){
+                case "*":
+                    result = n1*n2;
+                break;
+                case "/":
+                    result = n1/n2;
+                break;
+                case "+":
+                    result = n1+n2;
+                break;
+                case "-":
+                    result = n1-n2;
+                break;
+                case "^":
+                    result = pow(n1, n2);
+                break;
+            }
+            var decimalAccuracy = 5;
+            return round(result*pow(10, decimalAccuracy))/pow(10,decimalAccuracy);
+        };
+        s = "("+s+")";
+        //println("Start: \n"+s+"\n\n");
+        //RegExp's (I <3 them)
+        var findExp = /\d+(?:\.\d+)?[\+\-\*\/\^]\d+(?:\.\d+)?/; // find a 2-number expression
+        var numInParen = /\(\-?\d+(?:\.\d+)?\)/; //find a number by itself in ()
+        var expressionInParen = /\([^\(\)]+\)/;//get the expression in the parentheses
+        var done = /[\(\)]/;//check if done with calculations
+        var findNum1 = /^\([+\-]?\d+(?:\.\d+)?/;//get 1st number in 2-number expression
+        var findNum2 = /[\+\-\/\*\^][+\-]?\d+(?:\.\d+)?/;//get 2nd number in 2-number expression
+        var findOp = /\d[\*\/\-\+\^]/;//get the operator in a 2-number expression
+        var multiNumber = /[+\-]?\d+(?:\.\d+)?(?:[+\-\*/\^]+\d+(?:\.\d+)?){2,}/;//check to see if the expression has more than 2 numbers
+        var findP = /[+/-]?\d+(?:\.\d+)?\^\d+(?:\.\d+)?/;
+        var findMD = /[+\-]?\d+(?:\.\d+)?[\/\*]\d+(?:\.\d+)?/;//find the multiplication expression
+        var findAS = /[+\-]?\d+(?:\.\d+)?[\+\-]+\d+(?:\.\d+)?/;//find the addition expression
+        var badNumber = /\(\+\-?\d+(?:\.\d+)?/;//check if there's a number with a + in front of it un-necessarily
+        var iter = 0;
+        while(done.test(s)&&iter<100)
+        //for(var i = 0; i<10; i++)
+        {
+            var reportNum = true;
+            if(/ /.test(s)){
+                s = s.replace(s.match(/ /)[0], "");
+            } else 
+            if(badNumber.test(s)){
+                var ps = s.match(badNumber)[0];
+                var fixed = "("+ps.substring(2);//remove the +
+                s = s.replace(ps, fixed);
+                //println("found badNumber: " + ps);
+                //println("replaced with " + fixed);
+            } else
+            if(numInParen.test(s)){
+                var ps = s.match(numInParen)[0];
+                var ps2 = ps.substring(1, ps.length-1);
+                //println("found " + ps);
+                //println("replacing with " + ps2);
+                s = s.replace(ps, ps2);
+            } else if (expressionInParen.test(s)){
+                var ps = s.match(expressionInParen)[0];
+                if(multiNumber.test(ps)){
+                    //println("Found multinumber expression: " + ps.match(multiNumber)[0]);
+                    if(findP.test(ps)){
+                        var it = ps.match(findP)[0];
+                        var itn = "+(" + it + ")";
+                        var nps = ps.replace(it, itn);
+                        //println("found ^ -> " + it);
+                        //println("replacing with " + itn);
+                        s = s.replace(ps, nps);
+                    } else
+                    if(findMD.test(ps)){
+                        var it = ps.match(findMD)[0];
+                        var itn = "+(" + it + ")";
+                        var nps = ps.replace(it, itn);
+                        //println("found * -> " + it);
+                        //println("replacing with " + itn);
+                        s = s.replace(ps, nps);
+                    } else if (findAS.test(ps)){
+                        var it = ps.match(findAS)[0];
+                        var itn = "+("+it+")";
+                        var nps = ps.replace(it, itn);
+                        s = s.replace(ps, nps);
+                        //println("no * in this multinumber expression");
+                        //println("But found " + it);
+                        //println("And will replace with " + itn);
+                    } else {
+                        println("errorrrrr :( :( :(");
+                    }
+                } else {
+                    var n1 = ps.match(findNum1)[0].substring(1);
+                    var n2;
+                    if(n1.charAt(0)==="-"){
+                        var ps22 = ps.substring(2);
+                        n2 = ps22.match(findNum2)[0].substring(1);
+                    } else {
+                        n2 = ps.match(findNum2)[0].substring(1);
+                    }
+                    var op = ps.match(findOp)[0].substring(1);
+                    var re = evalExp(+n1, +n2, op);
+                    //println("found exp " + ps);
+                    //println("num1 = " + n1);
+                    //println("num2 = " + n2);
+                    //println("operator " + op);
+                    //println("result: " + re);
+                    s = s.replace(ps, re);
+                }
+            } else {
+                reportNum = false;
+            }
+            if(reportNum){
+                //println("Iteration: " + iter + "\n" + s + "\n\n");
+                iter++;
+            }
+        }
+        //println("It took " + iter + " iterations.");
+        return +s;
+    };
+    var importObj = function(file) {
+        //specific to this program
+        //console.log("file length: " + file.length);
+        
+        comments = "";
+        for(var i = 0; i<file.length; i++) {
+            if(file[i].charAt(0)==="#"&&file[i].charAt(1)!=="#") {
+                comments += "\n > " + file[i].slice(1);
+            }
+        }
+        
+        //this removes all of the unused features of the obj model that I don't (or can't) use
+        var cleanRegex = [
+            /^\/\//,
+            /^vn/,
+            /^\#/,
+            /^vt/,
+        ];
+        for(var i = file.length-1; i>=0; i--) {
+            var remove = false;
+            for(var j = 0; j<cleanRegex.length; j++) {
+                if(cleanRegex[j].test(file[i])){
+                    remove = true;
+                    //console.log("removed " + file[i]);
+                    break;
+                }
+            }
+            if(remove) {
+                file.splice(i, 1);
+            }
+        }
+        //console.log("after removing: length=" + file.length);
+        
+        var vertexSearch = /v(?:\s+-?\d+(?:\.\d+)?)+/;
+        var faceSearch = /f(?:\s+\d+)+/;
+        var textureValue = /\/{1,2}d+/;
+        for(var i = 0; i<file.length; i++) {
+            file[i] = file[i].replace(/\/{1,2}\d+/g, "");
+        }
+        var checkRegexInArray = function(rg, arr) {
+            for(var i = 0; i<arr.length; i++){
+                if(rg.test(arr[i])){
+                    return i;
+                }
+            }
+            return -1;
+        };
+        var getValues = function(str) {
+            str = str.split(" ");
+            var values = [];
+            for(var i = 0; i<str.length; i++) {
+                if(/[a-z]/.test(str[i])) {
+                    //println("skipped " + str[i]);
+                    continue;
+                }
+                var val = evalStr(str[i]);
+                //println("value found: " + val);
+                values.push(val);
+            }
+            return values;
+        };
+        var vertices = [];
+        var faces = [];
+        var model = [];
+        var check = checkRegexInArray(vertexSearch, file);
+        //println("checked at " + check);
+        while(check>=0&&vertices.length<maxVertices) {
+            vertices.push(file[check]);
+            file.splice(check, 1);
+            check = checkRegexInArray(vertexSearch, file);
+        }
+        check = checkRegexInArray(faceSearch, file);
+        while(check>=0&&faces.length<maxFaces) {
+            faces.push(file[check]);
+            file.splice(check, 1);
+            check = checkRegexInArray(faceSearch, file);
+        }
+        for(var i = 0; i<vertices.length; i++) {
+            vertices[i] = getValues(vertices[i]);
+        }
+        for(var i = 0; i<faces.length; i++) {
+            faces[i] = getValues(faces[i]);
+        }
+        //done formatting file YAY
+        //now I just need to use the data to change the format
+        model = newObjModel();
+        model[0] = vertices;
+        //console.log("vertices: " + JSON.stringify(vertices));
+        for(var i = 0; i<faces.length; i++) {
+            for(var j = 0; j<faces[i].length; j++) {
+                faces[i][j]--;
+            }
+        }
+        model[1] = faces;
+        // println("vertices: " + json.stringify(vertices));
+        // println("faces: " + json.stringify(faces));
+        // println("scraps: " + json.stringify(file));
+        // println("model: " + json.stringify(model));
+        //console.log("model: " + JSON.stringify(model));
+        return model;
+        
+    };
+    }
+    var importedModel, comments;
+    </script>
+    <script>
+        var modelSelect;
+        var numModels = -1;
+        var getFileData = function(file) {
+            file = file.replace("\r", "\n");
+            file = file.replace("\n\n", "\n");
+            var fileArray = file.split("\n");
+            for(var i = 0; i<fileArray.length; i++) {
+                fileArray[i] = fileArray[i].trim();
+            }
+            fileString = JSON.stringify(fileArray);
+            importedModel = importObj(fileArray);
+            importedModel = autoPosition(importedModel);
+            
+            //console.log(importedModel);
+        };
+        var get3DModels = function(data) {
+            var c = [];
+            modelSelect = data.revision.code.split("***");
+            for(var i = 0; i<modelSelect.length; i++) {
+                var name = /\n##.+\n/.exec(modelSelect[i]);
+                if(name) {
+                    name = name[0].slice(3).trim();
+                } else {
+                    name = "Model " + i;
+                }
+                document.getElementById("choose-model").innerHTML += 
+                '<input type="radio" name="3dchoose" id="3dchoose-'+i+'">' + name + '</input><br>';
+            }
+            getFileData(modelSelect[0]);
+            numModels = modelSelect.length;
+            for(var i = 0; i<numModels; i++) {
+                document.getElementById("3dchoose-"+i).onclick = function() {
+                    //console.log("value: " + this.value);
+                    var id = +this.id.charAt(this.id.length-1);
+                    //console.log("id is " + id);
+                    getFileData(modelSelect[id]);
+                    //console.log("file data: " + modelSelect[id]);
+                    //console.log("clicked " + this.id);
+                }
+            }
+        }
+    </script>
+    <!-- link to program here: https://www.khanacademy.org/computer-programming/3-da-models/6165333002846208 -->
+    <script src = "https://www.khanacademy.org/api/labs/scratchpads/6165333002846208?callback=get3DModels"></script>
+    <script src="https://cdn.jsdelivr.net/processing.js/1.4.8/processing.min.js"></script>
+    <script>
+        var sketchProc = function(processingInstance) {
+            with(processingInstance) {
+                size(600, 350);
+                var drawObjModel = function(moodle, sc, dr, lighting, perp) {
+                    //if(lighting===undefined||dr===1) {lighting = true;}
+                    var perspective = perp!==undefined;
+                    var normalizeNormals = true;
+                    if(dr===undefined) {
+                        dr = 0;
+                    }
+                    if(sc===undefined) {
+                        sc = 100;
+                    }
+                    var tx = width/2;
+                    var ty = height/2;
+                    var f = moodle[1];
+                    var v = moodle[0];
+                    var c = moodle[2];
+                    var pointSize = 1/400;
+                    if(dr===2) {
+                        noFill();
+                    }
+                    if(dr===1) {
+                        noStroke();
+                    }
+                    var triangles = [];
+                    /*
+                    format
+                    0: vertices
+                    1: color
+                    2: avgz
+                    */
+                    for(var i = 0; i<f.length; i++) {
+                        var a = [[]];
+                        var avgz = 0;
+                        for(var j = 0; j<f[i].length; j++) {
+                            var vert = v[f[i][j]];
+                            a[0].push(vert[0], vert[1], vert[2]);//push vertices
+                            avgz+=vert[2];
+                        }
+                        avgz/=f[i].length;
+                        a[1] = c[i];//color value
+                        a[2] = avgz;//average z
+                        //lighting
+                        if(f[i].length>=3&&lighting) {
+                            var v1 = v[f[i][0]];
+                            var v2 = v[f[i][1]];
+                            var v3 = v[f[i][2]];
+                            var vx = v2[0]-v1[0];
+                            var vy = v2[1]-v1[1];
+                            var vz = v2[2]-v1[2];
+                            var wx = v3[0]-v1[0];
+                            var wy = v3[1]-v1[1];
+                            var wz = v3[2]-v1[2];
+                            var nx = (vy*wz)-(vz*wy);
+                            var ny = (vz*wx)-(vx*wz);
+                            var nz = (vx*wy)-(vy*wx);
+                            if(normalizeNormals) {
+                                var l = Math.sqrt(nx*nx+ny*ny+nz*nz);
+                                nx/=l;
+                                ny/=l;
+                                nz/=l;
+                            }
+                            a[3] = [nx, ny, nz];//normal vector
+                        }
+                        triangles.push(a);//push this temporary array
+                    }
+                    triangles.sort(function(a, b) {return a[2]-b[2];});
+                    strokeWeight(1);
+                    var fall = dr<2||dr===3;
+                    var strokee = dr!==1;
+                    for(var i = 0; i<triangles.length; i++) {
+                        var col = triangles[i][1]|0;
+                        var r = (col&(255<<16))>>16;
+                        var g = (col&(255<<8))>>8;
+                        var b = col&255;
+                        if(fall) {
+                            if(lighting) {
+                                var n = triangles[i][3];
+                                var diffuse = 50*dot(n[0], n[1], n[2], 1, 1, 1);
+                                fill(r+diffuse, g+diffuse, b+diffuse);
+                            } else {
+                                fill(col);
+                            }
+                        }
+                        if(strokee){
+                            stroke(r-50, g-50, b-50);
+                        }
+                        if(perspective) {
+                            beginShape();
+                            var owo;
+                            for(var j = 0; j<triangles[i][0].length; j+= 3) {
+                                owo = pow(perp, triangles[i][0][j+2]);
+                                vertex(tx+triangles[i][0][j]*sc*owo, ty+triangles[i][0][j+1]*sc*owo);
+                            }
+                            owo = pow(perp, triangles[i][0][0+2]);
+                            vertex(tx+triangles[i][0][0]*sc*owo, ty+triangles[i][0][1]*sc*owo);
+                            endShape();
+                        } else {
+                            beginShape();
+                            for(var j = 0; j<triangles[i][0].length; j+= 3) {
+                                var z = triangles[i][0][j+2];
+                                vertex(tx+triangles[i][0][j]*sc, ty+triangles[i][0][j+1]*sc);
+                            }
+                            vertex(tx+triangles[i][0][0]*sc, ty+triangles[i][0][1]*sc);
+                            endShape();
+                        }
+                    }
+                    if(dr===3) {
+                        fill(0);
+                        for(var i = 0; i<v.length; i++) {
+                            text(i, tx+v[i][0]*sc, ty+v[i][1]*sc);
+                        }
+                    }
+                };
+                frameRate(60);
+                background(0)
+                var rot = {
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                }
+                var keys = [];
+                keyPressed = function() {keys[keyCode] = true}
+                keyReleased = function() {keys[keyCode] = false}
+                var mouseIsPressed = false
+                mousePressed = function() {
+                    mouseIsPressed = true
+                }
+                mouseReleased = function() {
+                    mouseIsPressed = false
+                }
+                draw = function() {
+                    try {
+                    background(150, 150, 100);
+                    var m = importedModel;
+                    m = rotateObjModel(m, rot.x, rot.y, rot.z);
+                    drawObjModel(m, min(width, height)*0.8, 1, true, 1.9);
+                    if(mouseIsPressed){
+                        rot.x+=pmouseY-mouseY;
+                        rot.y+=pmouseX-mouseX;
+                    }
+                    fill(0);
+                    //textAlign(RIGHT, CENTER);
+                    text((this.__frameRate|0) + "\nComments: " + comments, 2, 12);
+                    //textAlign(LEFT, CENTER);
+                    text(m[0].length + " vertices\n"+m[1].length + " faces", width-70, 13);
+                    } catch (eee) {}
+                };
+            }
+        }; // Get the canvas that Processing-js will use
+        var canvas = document.getElementById("mycanvas");
+        // Pass the function sketchProc (defined in myCode.js) to Processing's constructor.
+        var processingInstance = new Processing(canvas, sketchProc);
+    </script>
+</html>
